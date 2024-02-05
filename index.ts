@@ -68,7 +68,6 @@ class Grid2D {
     }
     for (let i = origin[isX ? "x" : isY ? "y" : "z"]; i !== ob; i += dir) {
       let cell: Point;
-      // console.log(i, ob, dir);
       if (isX) {
         cell = this.grid[origin.y][i][origin.z];
       } else if (isY) {
@@ -79,7 +78,6 @@ class Grid2D {
       if (cell.state) {
         break;
       }
-      // this.neighbors.push(cell);
       let sides: [Point, Point, Point, Point];
       if (isX) {
         sides = [
@@ -149,14 +147,6 @@ class Grid2D {
       if (cell.state) {
         break;
       }
-      // const intermediate1 = this.grid[y - yDir]?.[x];
-      // const intermediate2 = this.grid[y]?.[x - xDir];
-      // if (
-      //   !(intermediate1 && !intermediate1.state) &&
-      //   !(intermediate2 && !intermediate2.state)
-      // ) {
-      //   break;
-      // }
       let intermediate: [Point, Point];
       if (xDir !== 0 && yDir !== 0) {
         // xy diagonal, z is constant
@@ -177,8 +167,7 @@ class Grid2D {
       ) {
         break; // both intermediates are closed
       }
-      // this.neighbors.push(cell);
-      // this.important.push(cell); // there will always be an open side due to the intermediate checks
+      // there will always be an open side due to the intermediate checks
       important.push(cell);
       x += xDir;
       y += yDir;
@@ -188,33 +177,9 @@ class Grid2D {
   }
 
   public getNeighbors(point: Point): Point[] {
-    // const down = this.rookPath(point, 0, 1, 0); // +x
-    // const up = this.rookPath(point, 0, -1, 0); // -x
-    // const left = this.rookPath(point, -1, 0, 0); // -y
-    // const right = this.rookPath(point, 1, 0, 0); // +y
-
-    // const upLeft = this.bishopPath(point, -1, -1, 0); // -x -y
-    // const upRight = this.bishopPath(point, 1, -1, 0); // +x -y
-    // const downLeft = this.bishopPath(point, -1, 1, 0); // -x +y
-    // const downRight = this.bishopPath(point, 1, 1, 0); // +x +y
-
-    // // z axis
-    // const downZ = this.rookPath(point, 0, 0, 1); // +z
-    // const upZ = this.rookPath(point, 0, 0, -1); // -z
-
-    // // yz diagonal
-    // const upLeftZ = this.bishopPath(point, 0, -1, -1); // -y -z
-    // const upRightZ = this.bishopPath(point, 0, 1, -1); // +y -z
-    // const downLeftZ = this.bishopPath(point, 0, -1, 1); // -y +z
-    // const downRightZ = this.bishopPath(point, 0, 1, 1); // +y +z
-
-    // // xz diagonal
-    // const downX = this.bishopPath(point, -1, 0, 1); // -x +z
-    // const upX = this.bishopPath(point, -1, 0, -1); // -x -z
-    // const downXZ = this.bishopPath(point, 1, 0, 1); // +x +z
-    // const upXZ = this.bishopPath(point, 1, 0, -1); // +x -z
-
-    const important: Point[] = [
+    // you can prune out cells that are not important as they shouldn't be considered by
+    // the pathing algo as they would only lead to loops or just be a waste of time
+    return [
       ...this.rookPath(point, 0, 1, 0), // down | +x
       ...this.rookPath(point, 0, -1, 0), // up | -x
       ...this.rookPath(point, -1, 0, 0), // left | -y
@@ -234,13 +199,7 @@ class Grid2D {
       ...this.bishopPath(point, 1, 0, 1), // downXZ | +x +z
       ...this.bishopPath(point, 1, 0, -1), // upXZ | +x -z
     ];
-
-    // you can prune out cells that are not important as they shouldn't be considered by
-    // the pathing algo as they would only lead to loops or just be a waste of time
-
-    return important;
   }
 }
 
 const grid2D = new Grid2D(4, 4, 4);
-// grid2D.update();
