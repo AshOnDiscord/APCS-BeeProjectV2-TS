@@ -58,7 +58,8 @@ class Grid2D {
     origin: Point,
     xDir: number,
     yDir: number,
-    zDir: number
+    zDir: number,
+    end: Point[] = []
   ): Point[] {
     // exactly one will not be 0
     if (xDir === 0 && yDir === 0 && zDir === 0) {
@@ -123,6 +124,10 @@ class Grid2D {
         ];
       }
       // console.log(sides, isX, isY);
+      if (end.some((e) => e.toString() === cell.toString())) {
+        important.push(cell);
+        continue;
+      }
       // if atleast one side is open, the cell is important
       for (const side of sides) {
         if (side && !side.state) {
@@ -197,20 +202,21 @@ class Grid2D {
     return important; // non-important cells are pruned
   }
 
-  public getNeighbors(point: Point): Point[] {
+  public getNeighbors(point: Point, end: Point[] = []): Point[] {
     // you can prune out cells that are not important as they shouldn't be considered by
     // the pathing algo as they would only lead to loops or just be a waste of time
+    // bishopPath doesn't need end because all cells are important
     return [
-      ...this.rookPath(point, 0, 1, 0), // down | +x
-      ...this.rookPath(point, 0, -1, 0), // up | -x
-      ...this.rookPath(point, -1, 0, 0), // left | -y
-      ...this.rookPath(point, 1, 0, 0), // right | +y
+      ...this.rookPath(point, 0, 1, 0, end), // down | +x
+      ...this.rookPath(point, 0, -1, 0, end), // up | -x
+      ...this.rookPath(point, -1, 0, 0, end), // left | -y
+      ...this.rookPath(point, 1, 0, 0, end), // right | +y
       ...this.bishopPath(point, -1, -1, 0), // upLeft | -x -y
       ...this.bishopPath(point, 1, -1, 0), // upRight | +x -y
       ...this.bishopPath(point, -1, 1, 0), // downLeft | -x +y
       ...this.bishopPath(point, 1, 1, 0), // downRight | +x +y
-      ...this.rookPath(point, 0, 0, 1), // downZ | +z
-      ...this.rookPath(point, 0, 0, -1), // upZ | -z
+      ...this.rookPath(point, 0, 0, 1, end), // downZ | +z
+      ...this.rookPath(point, 0, 0, -1, end), // upZ | -z
       ...this.bishopPath(point, 0, -1, -1), // upLeftZ | -y -z
       ...this.bishopPath(point, 0, 1, -1), // upRightZ | +y -z
       ...this.bishopPath(point, 0, -1, 1), // downLeftZ | -y +z
@@ -354,9 +360,11 @@ const aStarResult = aStar(
     }));
   },
   (node) => {
+    // return 0;
     const { x, y, z } = Point.fromString(node);
     const { x: endX, y: endY, z: endZ } = end[0];
-    return Math.abs(x - endX) + Math.abs(y - endY) + Math.abs(z - endZ);
+    const dist = Math.abs(x - endX) + Math.abs(y - endY) + Math.abs(z - endZ);
+    return dist * 0.1;
   }
 );
 
