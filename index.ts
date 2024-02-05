@@ -1,19 +1,40 @@
+import { aStar } from "./pathFinder";
+
 class Point {
   constructor(
     public x: number,
     public y: number,
     public z: number,
     public state = false
-  ) {}
+  ) {
+    // check to make sure all values are valid
+    if (x == null || y == null || z == null) {
+      throw new Error(`Invalid point: ${x}, ${y}, ${z}`);
+    }
+    if (x == undefined || y == undefined || z == undefined) {
+      throw new Error(`Invalid point: ${x}, ${y}, ${z}`);
+    }
+    if (isNaN(x) || isNaN(y) || isNaN(z)) {
+      throw new Error(`Invalid point: ${x}, ${y}, ${z}`);
+    }
+  }
 
   public toString() {
     return `(${this.x}, ${this.y}, ${this.z})`;
+  }
+
+  public static fromString(str: string): Point {
+    const [x, y, z] = str
+      .slice(1, -1)
+      .split(",")
+      .map((n) => parseInt(n));
+    return new Point(x, y, z);
   }
 }
 
 class Grid2D {
   public grid: Point[][][] = [];
-  public start: Point | null = null;
+  // public start: Point | null = null;
   constructor(
     public width: number,
     public height: number,
@@ -30,7 +51,7 @@ class Grid2D {
       }
       this.grid.push(plane);
     }
-    this.start = this.grid[width / 2][height / 2][depth / 2];
+    // this.start = this.grid[width / 2][height / 2][depth / 2];
   }
 
   public rookPath(
@@ -81,27 +102,27 @@ class Grid2D {
       let sides: [Point, Point, Point, Point];
       if (isX) {
         sides = [
-          this.grid[origin.y - 1][i][origin.z],
-          this.grid[origin.y + 1][i][origin.z],
+          this.grid[origin.y - 1]?.[i][origin.z],
+          this.grid[origin.y + 1]?.[i][origin.z],
           this.grid[origin.y][i][origin.z - 1],
           this.grid[origin.y][i][origin.z + 1],
         ];
       } else if (isY) {
         sides = [
-          this.grid[i][origin.x - 1][origin.z],
-          this.grid[i][origin.x + 1][origin.z],
+          this.grid[i][origin.x - 1]?.[origin.z],
+          this.grid[i][origin.x + 1]?.[origin.z],
           this.grid[i][origin.x][origin.z - 1],
           this.grid[i][origin.x][origin.z + 1],
         ];
       } else {
         sides = [
-          this.grid[origin.y - 1][origin.x][i],
-          this.grid[origin.y + 1][origin.x][i],
-          this.grid[origin.y][origin.x - 1][i],
-          this.grid[origin.y][origin.x + 1][i],
+          this.grid[origin.y - 1]?.[origin.x][i],
+          this.grid[origin.y + 1]?.[origin.x][i],
+          this.grid[origin.y][origin.x - 1]?.[i],
+          this.grid[origin.y][origin.x + 1]?.[i],
         ];
       }
-      console.log(sides, isX, isY);
+      // console.log(sides, isX, isY);
       // if atleast one side is open, the cell is important
       for (const side of sides) {
         if (side && !side.state) {
@@ -202,4 +223,141 @@ class Grid2D {
   }
 }
 
-const grid2D = new Grid2D(4, 4, 4);
+const parser = async (
+  path: string,
+  checks: boolean
+): Promise<{
+  cycle: number;
+  size: Point;
+  end: Point[];
+  bees: Point[];
+  obstacles: Point[];
+}> => {
+  const file = Bun.file(path);
+  const text = (await file.text()).trim();
+  const lines = text.split("\n");
+
+  let cycle = -1;
+  let size: Point = new Point(0, 0, 0);
+  const end: Point[] = [];
+  const bees: Point[] = [];
+  let obstacleCount = 0; // checks if the correct number of obstacles are present
+  const obstacles: Point[] = [];
+
+  for (const [i, line] of lines.entries()) {
+    // console.log(i, line);
+    if (i === 0) {
+      cycle = parseInt(line);
+      continue;
+    }
+    if (i === 1) {
+      const [w, h, d] = line.split(",").map((n) => parseInt(n));
+      if (checks && (w !== h || h !== d)) {
+        // no need to check w !== d because w === h
+        throw new Error(`Invalid size, must be a cube: ${w}, ${h}, ${d}`);
+      }
+      size = new Point(w, h, d);
+      continue;
+    }
+    if (i < 17) {
+      // 15 lines
+      const [x, y, z] = line.split(",").map((n) => parseInt(n));
+      end.push(new Point(x, y, z));
+      continue;
+    }
+    if (i < 32) {
+      const [x, y, z] = line.split(",").map((n) => parseInt(n));
+      bees.push(new Point(x, y, z));
+      continue;
+    }
+    if (i === 32) {
+      if (checks) {
+        obstacleCount = parseInt(line);
+      }
+      continue;
+    }
+    const [x, y, z] = line.split(",").map((n) => parseInt(n));
+    obstacles.push(new Point(x, y, z));
+  }
+  if (checks) {
+    if (end.length !== 15) {
+      throw new Error(`End points are not 15: ${end.length}`);
+    }
+    // all 15 points must be in a straight line
+    {
+      const { x, y, z } = end[0];
+      const xDir = end[1].x - x;
+      const yDir = end[1].y - y;
+      const zDir = end[1].z - z;
+
+      if (xDir === 0 && yDir === 0 && zDir === 0) {
+        throw new Error("Invalid direction, duplicate points");
+      }
+      if (xDir !== 0 && yDir !== 0 && zDir !== 0) {
+        throw new Error("Invalid direction, 3 axis diagonal"); // 2 axis diagonal or just 1 axis is allowed
+      }
+      for (let i = 1; i < end.length; i++) {
+        if (end[i].x !== x + i * xDir) {
+          throw new Error(`x is off. start: ${x}, end: ${end[i].x}`);
+        }
+        if (end[i].y !== y + i * yDir) {
+          throw new Error(`y is off. start: ${y}, end: ${end[i].y}`);
+        }
+        if (end[i].z !== z + i * zDir) {
+          throw new Error(`z is off. start: ${z}, end: ${end[i].z}`);
+        }
+      }
+    }
+    if (bees.length !== 15) {
+      throw new Error(`Bees are not 15: ${bees.length}`);
+    }
+    if (obstacles.length !== obstacleCount) {
+      throw new Error(
+        `Obstacle count is off. Expected: ${obstacleCount}, Got: ${obstacles.length}`
+      );
+    }
+  }
+  console.log(`Cycle: ${cycle}`);
+  console.log(`Size: ${size.toString()}`);
+  console.log(`End: ${end.map((p) => p.toString()).join(", ")}`);
+  console.log(`Bees: ${bees.map((p) => p.toString()).join(", ")}`);
+  if (checks) console.log(`Obstacles: ${obstacleCount}`); // too many to print
+
+  return {
+    cycle,
+    size,
+    end,
+    bees,
+    obstacles,
+  };
+};
+
+const { cycle, size, end, bees, obstacles } = await parser("data.txt", true);
+
+const grid2D = new Grid2D(size.x, size.y, size.z);
+
+for (const point of obstacles) {
+  grid2D.grid[point.y][point.x][point.z].state = true;
+}
+
+const gridSet = new Set<string>(grid2D.grid.flat(2).map((p) => p.toString()));
+
+const aStarResult = aStar(
+  gridSet,
+  bees[0].toString(),
+  end[0].toString(),
+  (node) => {
+    const neighbors = grid2D.getNeighbors(Point.fromString(node));
+    return [...neighbors!].map((node) => ({
+      node: node.toString(),
+      distance: 1,
+    }));
+  },
+  (node) => {
+    const { x, y, z } = Point.fromString(node);
+    const { x: endX, y: endY, z: endZ } = end[0];
+    return Math.abs(x - endX) + Math.abs(y - endY) + Math.abs(z - endZ);
+  }
+);
+
+console.log(aStarResult);

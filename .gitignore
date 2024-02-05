@@ -1,3 +1,6 @@
+# huge file of like 100k words from /usr/share/dict/words
+words.txt
+
 # Based on https://raw.githubusercontent.com/github/gitignore/main/Node.gitignore
 
 # Logs
