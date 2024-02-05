@@ -47,7 +47,7 @@ export const dijkstra = (
 export const aStar = <Node>(
   points: Set<Node>,
   start: Node,
-  end: Node,
+  end: Node[],
   getNeighbors: (node: Node) => { node: Node; distance: number }[],
   getHeuristics: (node: Node) => number = () => 0
 ) => {
@@ -75,12 +75,15 @@ export const aStar = <Node>(
     return minDistances.get(node)!.distance + heuristics;
   };
 
+  let current = start;
   while (unseen.length > 0) {
     // grab the smallest dist unvisited node
-    const current = unseen.sort((a, b) => getWeight(a) - getWeight(b)).shift()!
-      .node;
+    current = unseen.sort((a, b) => getWeight(a) - getWeight(b)).shift()!.node;
 
-    if (current === end) break; // early exit (original dijkstra gets all distances, we only need the end)
+    // debugger;
+    if (end.includes(current)) {
+      break;
+    }
 
     // visit the node
     // get all neighbors
@@ -110,15 +113,19 @@ export const aStar = <Node>(
   }
   // we now have the distances, reconstruct the path
   const path: Node[] = [];
-  let current = end;
-  while (current !== start) {
-    path.push(current);
+  // let current = end;
+  let retrace = current;
+  while (retrace !== start) {
+    path.push(retrace);
     try {
-      current = minDistances.get(current)!.previous!;
+      retrace = minDistances.get(retrace)!.previous!;
     } catch {
       debugger;
     }
   }
   path.push(start);
-  return { path: path.reverse(), distance: minDistances.get(end)?.distance };
+  return {
+    path: path.reverse(),
+    distance: minDistances.get(current)?.distance,
+  };
 };

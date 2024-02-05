@@ -348,24 +348,37 @@ for (const point of obstacles) {
 
 const gridSet = new Set<string>(grid2D.grid.flat(2).map((p) => p.toString()));
 
-const aStarResult = aStar(
-  gridSet,
-  bees[0].toString(),
-  end[0].toString(),
-  (node) => {
-    const neighbors = grid2D.getNeighbors(Point.fromString(node));
-    return [...neighbors!].map((node) => ({
-      node: node.toString(),
-      distance: 1,
-    }));
-  },
-  (node) => {
-    // return 0;
-    const { x, y, z } = Point.fromString(node);
-    const { x: endX, y: endY, z: endZ } = end[0];
-    const dist = Math.abs(x - endX) + Math.abs(y - endY) + Math.abs(z - endZ);
-    return dist * 0.1;
-  }
-);
-
-console.log(aStarResult);
+bees.forEach((bee) => {
+  const result = aStar(
+    gridSet,
+    bee.toString(),
+    end.map((p) => p.toString()),
+    (node) => {
+      const neighbors = grid2D.getNeighbors(Point.fromString(node));
+      return [...neighbors!].map((node) => ({
+        node: node.toString(),
+        distance: 1,
+      }));
+    },
+    (node) => {
+      // return 0;
+      const { x, y, z } = Point.fromString(node);
+      let min = Infinity;
+      for (const endPoint of end) {
+        const xDist = Math.abs(endPoint.x - x);
+        const yDist = Math.abs(endPoint.y - y);
+        const zDist = Math.abs(endPoint.z - z);
+        const dist = xDist + yDist + zDist;
+        if (dist < min) {
+          min = dist;
+        }
+      }
+      return min * 0.1;
+    }
+  );
+  console.log(
+    `${bee.toString()} -> ${result.path[result.path.length - 1]}: ${
+      result.distance
+    }`
+  );
+});

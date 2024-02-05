@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@datastructures-js/priority-queue':
+    specifier: ^6.3.1
+    version: 6.3.1
   mitata:
     specifier: ^0.1.8
     version: 0.1.8
@@ -15,6 +18,16 @@ devDependencies:
     version: 1.0.4
 
 packages:
+
+  /@datastructures-js/heap@4.3.3:
+    resolution: {integrity: sha512-UcUu/DLh/aM4W3C8zZfwxxm6/6FIZUlm3mcAXuNOCa6Aj4iizNvNXQyb8DjZQH2jKSQbMRyNlngP6TPimuGjpQ==}
+    dev: false
+
+  /@datastructures-js/priority-queue@6.3.1:
+    resolution: {integrity: sha512-eoxkWql/j0VJ0UFMFTpnyJz4KbEEVQ6aZ/JuJUgenu0Im4tYKylAycNGsYCHGXiVNEd7OKGVwfx1Ac3oYkuu7A==}
+    dependencies:
+      '@datastructures-js/heap': 4.3.3
+    dev: false
 
   /@types/bun@1.0.4:
     resolution: {integrity: sha512-2DO7sqwtpko3d3XP2kLpJsOkV12sSRt8cFR955JVB60m1DiXE56T+gJq+DcCczQ5khxgCDQKkyBRlgg5VH33Dw==}
