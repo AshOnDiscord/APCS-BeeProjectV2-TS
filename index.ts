@@ -14,8 +14,6 @@ class Point {
 class Grid2D {
   public grid: Point[][][] = [];
   public start: Point | null = null;
-  public neighbors: Point[] = [];
-  public important: Point[] = [];
   constructor(
     public width: number,
     public height: number,
@@ -33,10 +31,14 @@ class Grid2D {
       this.grid.push(plane);
     }
     this.start = this.grid[width / 2][height / 2][depth / 2];
-    this.update();
   }
 
-  public rookPath(origin: Point, xDir: number, yDir: number, zDir: number) {
+  public rookPath(
+    origin: Point,
+    xDir: number,
+    yDir: number,
+    zDir: number
+  ): Point[] {
     // exactly one will not be 0
     if (xDir === 0 && yDir === 0 && zDir === 0) {
       throw new Error("Invalid direction"); // require at least one direction
@@ -58,6 +60,7 @@ class Grid2D {
     // no isZ because if it's not x or y, it's z
     const dir = xDir || yDir || zDir;
     let ob: number;
+    const important: Point[] = [];
     if (dir == 1) {
       ob = isX ? this.width : isY ? this.height : this.depth;
     } else {
@@ -76,7 +79,7 @@ class Grid2D {
       if (cell.state) {
         break;
       }
-      this.neighbors.push(cell);
+      // this.neighbors.push(cell);
       let sides: [Point, Point, Point, Point];
       if (isX) {
         sides = [
@@ -104,14 +107,21 @@ class Grid2D {
       // if atleast one side is open, the cell is important
       for (const side of sides) {
         if (side && !side.state) {
-          this.important.push(cell);
+          // this.important.push(cell);
+          important.push(cell);
           break;
         }
       }
     }
+    return important; // non-important cells are pruned
   }
 
-  public bishopPath(origin: Point, xDir: number, yDir: number, zDir: number) {
+  public bishopPath(
+    origin: Point,
+    xDir: number,
+    yDir: number,
+    zDir: number
+  ): Point[] {
     // exactly 2 will not be 0
     if (xDir === 0 && yDir === 0 && zDir === 0) {
       throw new Error("Invalid direction"); // require at least one direction
@@ -126,6 +136,7 @@ class Grid2D {
     let x = origin.x + xDir;
     let y = origin.y + yDir;
     let z = origin.z + zDir;
+    const important: Point[] = [];
     while (
       x >= 0 &&
       x < this.width &&
@@ -166,46 +177,68 @@ class Grid2D {
       ) {
         break; // both intermediates are closed
       }
-      this.neighbors.push(cell);
-      this.important.push(cell); // there will always be an open side due to the intermediate checks
+      // this.neighbors.push(cell);
+      // this.important.push(cell); // there will always be an open side due to the intermediate checks
+      important.push(cell);
       x += xDir;
       y += yDir;
       z += zDir;
     }
+    return important; // non-important cells are pruned
   }
 
-  public update() {
-    this.neighbors = [];
-    this.important = [];
+  public getNeighbors(point: Point): Point[] {
+    // const down = this.rookPath(point, 0, 1, 0); // +x
+    // const up = this.rookPath(point, 0, -1, 0); // -x
+    // const left = this.rookPath(point, -1, 0, 0); // -y
+    // const right = this.rookPath(point, 1, 0, 0); // +y
 
-    const down = this.rookPath(this.start!, 0, 1, 0); // +x
-    const up = this.rookPath(this.start!, 0, -1, 0); // -x
-    const left = this.rookPath(this.start!, -1, 0, 0); // -y
-    const right = this.rookPath(this.start!, 1, 0, 0); // +y
-
-    const upLeft = this.bishopPath(this.start!, -1, -1, 0); // -x -y
-    const upRight = this.bishopPath(this.start!, 1, -1, 0); // +x -y
-    const downLeft = this.bishopPath(this.start!, -1, 1, 0); // -x +y
-    const downRight = this.bishopPath(this.start!, 1, 1, 0); // +x +y
+    // const upLeft = this.bishopPath(point, -1, -1, 0); // -x -y
+    // const upRight = this.bishopPath(point, 1, -1, 0); // +x -y
+    // const downLeft = this.bishopPath(point, -1, 1, 0); // -x +y
+    // const downRight = this.bishopPath(point, 1, 1, 0); // +x +y
 
     // // z axis
-    const downZ = this.rookPath(this.start!, 0, 0, 1); // +z
-    const upZ = this.rookPath(this.start!, 0, 0, -1); // -z
+    // const downZ = this.rookPath(point, 0, 0, 1); // +z
+    // const upZ = this.rookPath(point, 0, 0, -1); // -z
 
     // // yz diagonal
-    const upLeftZ = this.bishopPath(this.start!, 0, -1, -1); // -y -z
-    const upRightZ = this.bishopPath(this.start!, 0, 1, -1); // +y -z
-    const downLeftZ = this.bishopPath(this.start!, 0, -1, 1); // -y +z
-    const downRightZ = this.bishopPath(this.start!, 0, 1, 1); // +y +z
+    // const upLeftZ = this.bishopPath(point, 0, -1, -1); // -y -z
+    // const upRightZ = this.bishopPath(point, 0, 1, -1); // +y -z
+    // const downLeftZ = this.bishopPath(point, 0, -1, 1); // -y +z
+    // const downRightZ = this.bishopPath(point, 0, 1, 1); // +y +z
 
     // // xz diagonal
-    const downX = this.bishopPath(this.start!, -1, 0, 1); // -x +z
-    const upX = this.bishopPath(this.start!, -1, 0, -1); // -x -z
-    const downXZ = this.bishopPath(this.start!, 1, 0, 1); // +x +z
-    const upXZ = this.bishopPath(this.start!, 1, 0, -1); // +x -z
+    // const downX = this.bishopPath(point, -1, 0, 1); // -x +z
+    // const upX = this.bishopPath(point, -1, 0, -1); // -x -z
+    // const downXZ = this.bishopPath(point, 1, 0, 1); // +x +z
+    // const upXZ = this.bishopPath(point, 1, 0, -1); // +x -z
+
+    const important: Point[] = [
+      ...this.rookPath(point, 0, 1, 0), // down | +x
+      ...this.rookPath(point, 0, -1, 0), // up | -x
+      ...this.rookPath(point, -1, 0, 0), // left | -y
+      ...this.rookPath(point, 1, 0, 0), // right | +y
+      ...this.bishopPath(point, -1, -1, 0), // upLeft | -x -y
+      ...this.bishopPath(point, 1, -1, 0), // upRight | +x -y
+      ...this.bishopPath(point, -1, 1, 0), // downLeft | -x +y
+      ...this.bishopPath(point, 1, 1, 0), // downRight | +x +y
+      ...this.rookPath(point, 0, 0, 1), // downZ | +z
+      ...this.rookPath(point, 0, 0, -1), // upZ | -z
+      ...this.bishopPath(point, 0, -1, -1), // upLeftZ | -y -z
+      ...this.bishopPath(point, 0, 1, -1), // upRightZ | +y -z
+      ...this.bishopPath(point, 0, -1, 1), // downLeftZ | -y +z
+      ...this.bishopPath(point, 0, 1, 1), // downRightZ | +y +z
+      ...this.bishopPath(point, -1, 0, 1), // downX | -x +z
+      ...this.bishopPath(point, -1, 0, -1), // upX | -x -z
+      ...this.bishopPath(point, 1, 0, 1), // downXZ | +x +z
+      ...this.bishopPath(point, 1, 0, -1), // upXZ | +x -z
+    ];
 
     // you can prune out cells that are not important as they shouldn't be considered by
     // the pathing algo as they would only lead to loops or just be a waste of time
+
+    return important;
   }
 }
 
