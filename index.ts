@@ -373,12 +373,8 @@ bees.forEach((bee) => {
           min = dist;
         }
       }
-      return min * 0.1;
+      return min * 0.25;
     }
   );
-  console.log(
-    `${bee.toString()} -> ${result.path[result.path.length - 1]}: ${
-      result.distance
-    }`
-  );
+  console.log(`${bee.toString()} -> ${result.end}: ${result.distance}`);
 });

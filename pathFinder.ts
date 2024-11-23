@@ -111,21 +111,8 @@ export const aStar = <Node>(
       }
     }
   }
-  // we now have the distances, reconstruct the path
-  const path: Node[] = [];
-  // let current = end;
-  let retrace = current;
-  while (retrace !== start) {
-    path.push(retrace);
-    try {
-      retrace = minDistances.get(retrace)!.previous!;
-    } catch {
-      debugger;
-    }
-  }
-  path.push(start);
   return {
-    path: path.reverse(),
+    end: current,
     distance: minDistances.get(current)?.distance,
   };
 };
